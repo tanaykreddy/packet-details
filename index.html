@@ -216,7 +216,7 @@
                 try {
                     var json = JSON.parse(e.target.result);
                 } catch (e) {
-                    showError();
+                    showError("ERROR: INVALID FILE FORMAT");
                 }
                 document.querySelector("#input-data").value = json["data"].join("\n");
 
@@ -246,7 +246,7 @@
                 var outputText = inputText;
 
                 if (makeBinString(outputText).includes("undefined")) {
-                    showError();
+                    showError("ERROR: STRING CONTAINS INVALID CHARACTERS");
                     return;
                 }
 
@@ -324,8 +324,10 @@
             var startIdx;
             var endIdx;
             for (var i = 0; i < sections.length; i++) {
-                if (!(sections[i].includes("[") && sections[i].includes(":") && sections[i].includes("]"))) {
-                    showError();
+                sections[i] = sections[i].replace(/\s/g, '');
+
+                if (!/\w+\[\d+\:\d+\]$/g.test(sections[i])) {
+                    showError("ERROR: BOUNDS CONTAIN INVALID SYNTAX");
                     return;
                 }
 
@@ -334,7 +336,7 @@
                 endIdx = binString.length - sections[i].substring(sections[i].indexOf(":") + 1, sections[i].length - 1);
 
                 if (startIdx >= endIdx) {
-                    showError();
+                    showError("ERROR: UPPER BOUND IS SMALLER THAN LOWER BOUND");
                     return;
                 }
 
@@ -394,8 +396,8 @@
             return hexString;
         }
 
-        function showError() {
-            document.querySelector("#output-data").innerHTML = "<span style='color: red'>ERROR: INVALID INPUT</span>";
+        function showError(message) {
+            document.querySelector("#output-data").innerHTML = "<span style='color: red'>" + message + "</span>";
             document.querySelector("#selected-info").innerHTML = "";
         }
 

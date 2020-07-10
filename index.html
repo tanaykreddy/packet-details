@@ -250,7 +250,7 @@
                     return;
                 }
 
-                finalText += "<span id='select-" + i + "'class='unselected'>" + outputText + "</span><br><br>";
+                finalText += "<span id='select-" + i + "'class='unselected'>" + (i + 1) + ")&nbsp;" + outputText + "</span><br><br>";
             }
 
             document.querySelector("#output-data").innerHTML = finalText;
@@ -263,7 +263,12 @@
 
         //Highlights the selected line
         function selectLine(index) {
-            document.querySelector("#select-" + index).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'start' });
+            if (index == 0)
+                document.querySelector("#output-data").scrollTop = 0;
+            else if (index == numLines - 1)
+                document.querySelector("#output-data").scrollTop = document.querySelector("#output-data").scrollHeight;
+            else
+                document.querySelector("#select-" + index).scrollIntoViewIfNeeded(true);
 
             if (prevSelect != -1) {
                 document.querySelector("#select-" + prevSelect).classList.remove("selected");
@@ -310,7 +315,7 @@
         function showStats(index) {
             var sections = document.querySelector("#input-split").value.trim().replace(/\s\s+/g, ' ').split(" ");
 
-            var hexString = document.querySelector("#select-" + index).innerHTML;
+            var hexString = document.querySelector("#select-" + index).innerHTML.substring(8);
             var binString = makeBinString(hexString);
 
             var finalText = "<span>Hex&nbsp;String:&nbsp;" + hexString + "</span><br><br>";

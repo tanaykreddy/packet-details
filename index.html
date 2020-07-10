@@ -105,6 +105,8 @@
 
         #output-data {
             border-width: 0 5px 0px 0;
+            overflow: scroll;
+            overflow-x: hidden;
         }
 
         .unselected:hover {
@@ -145,7 +147,7 @@
 
             #output-data,
             #output-info {
-                min-height: calc(100vh - 313px);
+                height: calc(100vh - 313px);
             }
 
             #upload-label {
@@ -168,7 +170,7 @@
 
             #output-data,
             #output-info {
-                min-height: calc(100vh - 208px);
+                height: calc(100vh - 208px);
             }
 
             #upload-label {
@@ -253,12 +255,16 @@
 
             document.querySelector("#output-data").innerHTML = finalText;
             document.querySelector("#selected-info").innerHTML = "";
+
+            selectLine(0);
         }
         document.querySelector("#input-data").addEventListener('input', display);
         document.querySelector("#input-split").addEventListener('input', display);
 
         //Highlights the selected line
         function selectLine(index) {
+            document.querySelector("#select-" + index).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'start' });
+
             if (prevSelect != -1) {
                 document.querySelector("#select-" + prevSelect).classList.remove("selected");
                 document.querySelector("#select-" + prevSelect).classList.add("unselected");
@@ -278,6 +284,27 @@
                 }
             }
         });
+
+        //Moves the selected line using arrow keys
+        function checkKeyUp(event) {
+            switch (event.key) {
+                case "ArrowUp":
+                    event.preventDefault();
+                    
+                    if (prevSelect > 0)
+                        selectLine(prevSelect - 1);
+
+                    break;
+                case "ArrowDown":
+                    event.preventDefault();
+
+                    if (prevSelect < numLines - 1)
+                        selectLine(prevSelect + 1);
+
+                    break;
+            }
+        }
+        window.addEventListener("keydown", checkKeyUp);
 
         //Displays statistics for the selected line
         function showStats(index) {
@@ -300,9 +327,8 @@
             }
 
             document.querySelector("#selected-info").innerHTML = finalText;
-            document.querySelector("#selected-info").style.top = document.querySelector("#select-" + index).offsetTop - ((window.innerWidth >= 650) ? 338 : 233) + "px";
         }
-        window.addEventListener("resize", function() {
+        window.addEventListener("resize", function () {
             if (prevSelect != -1)
                 showStats(prevSelect);
         });

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Packet Details</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        header {
+            float: left;
+            width: 100%;
+            background-color: black;
+        }
+
+        h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 6em;
+            color: white;
+            text-align: center;
+        }
+
+        textarea {
+            font-family: 'Courier Prime', monospace;
+            float: left;
+            width: 100%;
+            resize: none;
+            border-width: 0px 0 5px 0;
+            border-color: black;
+            padding: 5px;
+        }
+
+        #input-data {
+            height: 5.1em;
+        }
+
+        textarea:hover,
+        #input-split:hover,
+        #input-upload:hover {
+            background-color: #E5E5E5;
+        }
+
+        textarea:focus,
+        #input-split:focus,
+        #input-upload:focus {
+            background-color: #CCCCCC;
+            outline: none;
+        }
+
+        #input-split,
+        #input-upload {
+            font-family: 'Courier Prime', monospace;
+            float: left;
+            width: 50%;
+            height: 2em;
+            border-color: black;
+            padding: 5px;
+        }
+
+        #input-split {
+            border-width: 0 5px 5px 0;
+        }
+
+        #input-upload {
+            border-width: 0 0 5px 0;
+            border-style: solid;
+            padding: 0;
+        }
+
+        #upload-label {
+            width: 100%;
+            height: 100%;
+            display: block;
+            text-align: center;
+        }
+
+        #upload-button {
+            display: none;
+        }
+
+        #upload-label:hover {
+            cursor: pointer;
+        }
+
+        #output-data,
+        #output-info {
+            font-family: 'Courier Prime', monospace;
+            overflow-wrap: break-word;
+            float: left;
+            width: 50%;
+            border-color: black;
+            border-style: solid;
+            padding: 25px 5px 25px 5px;
+        }
+
+        #output-data {
+            border-width: 0 5px 0px 0;
+        }
+
+        .unselected:hover {
+            background-color: #E5E5E5;
+            cursor: pointer;
+        }
+
+        .selected {
+            background-color: #A4C2F4;
+        }
+
+        .selected:hover {
+            background-color: #97B2DB;
+            cursor: pointer;
+        }
+
+        #output-info {
+            border-width: 0;
+        }
+
+        #selected-info {
+            position: relative;
+            top: 0;
+        }
+
+        @media (min-width: 650px) {
+            h1 {
+                font-size: 6em;
+            }
+
+            textarea,
+            #input-split,
+            #input-upload,
+            #output-data,
+            #output-info {
+                font-size: 1.5em;
+            }
+
+            #output-data,
+            #output-info {
+                min-height: calc(100vh - 313px);
+            }
+
+            #upload-label {
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 649px) {
+            h1 {
+                font-size: 4em;
+            }
+
+            textarea,
+            #input-split,
+            #input-upload,
+            #output-data,
+            #output-info {
+                font-size: 1em;
+            }
+
+            #output-data,
+            #output-info {
+                min-height: calc(100vh - 208px);
+            }
+
+            #upload-label {
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Packet Details</h1>
+    </header>
+
+    <textarea type='text' id='input-data' placeholder='Hexadecimal String Input'></textarea>
+
+    <input type='text' id='input-split' placeholder='Split Bounds'>
+    <div id='input-upload'>
+        <label for='upload-button' id='upload-label'>Upload JSON File</label>
+        <input type='file' id='upload-button'>
+    </div>
+
+    <br><br>
+
+    <div id='output-data'></div>
+    <div id='output-info'>
+        <div id='selected-info'></div>
+    </div>
+
+    <script>
+        var numLines = 0;
+        var prevSelect = -1;
+
+        //Processes file uploads
+        document.querySelector("#upload-button").addEventListener('input', function () {
+            var file = document.querySelector("#upload-button").files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.querySelector("#upload-label").innerHTML = "Uploaded " + file.name;
+                document.querySelector("#input-data").value = "";
+                document.querySelector("#input-split").value = "";
+
+                try {
+                    var json = JSON.parse(e.target.result);
+                } catch (e) {
+                    showError();
+                }
+                document.querySelector("#input-data").value = json["data"].join("\n");
+
+                var names = json["names"];
+                var split = json["split"];
+                var splitString = "";
+                for (var i = 0; i < split.length; i++) {
+                    splitString += names[i] + "[" + split[i][0] + ":" + split[i][1] + "] ";
+                }
+                document.querySelector("#input-split").value = splitString.substring(0, splitString.length - 1);
+
+                display();
+            }
+
+            reader.readAsText(file);
+            document.querySelector("#upload-button").value = null;
+        });
+
+        //Displays the input data in the output data box whenever it changes
+        function display() {
+            var fullText = document.querySelector("#input-data").value.split("\n");
+            numLines = fullText.length;
+
+            var finalText = "";
+            for (var i = 0; i < numLines; i++) {
+                var inputText = fullText[i].replace(/\s/g, '').toUpperCase();
+                var outputText = inputText;
+
+                if (makeBinString(outputText).includes("undefined")) {
+                    showError();
+                    return;
+                }
+
+                finalText += "<span id='select-" + i + "'class='unselected'>" + outputText + "</span><br><br>";
+            }
+
+            document.querySelector("#output-data").innerHTML = finalText;
+            document.querySelector("#selected-info").innerHTML = "";
+        }
+        document.querySelector("#input-data").addEventListener('input', display);
+        document.querySelector("#input-split").addEventListener('input', display);
+
+        //Highlights the selected line
+        function selectLine(index) {
+            if (prevSelect != -1) {
+                document.querySelector("#select-" + prevSelect).classList.remove("selected");
+                document.querySelector("#select-" + prevSelect).classList.add("unselected");
+            }
+
+            document.querySelector("#select-" + index).classList.remove("unselected");
+            document.querySelector("#select-" + index).classList.add("selected");
+            prevSelect = index;
+
+            showStats(index);
+        }
+        document.addEventListener("mouseup", function checkSelect() {
+            for (var i = 0; i < numLines; i++) {
+                if (document.querySelector("#select-" + i).matches(":hover")) {
+                    selectLine(i);
+                    return;
+                }
+            }
+        });
+
+        //Displays statistics for the selected line
+        function showStats(index) {
+            var sections = document.querySelector("#input-split").value.replace(/\s\s+/g, ' ').split(" ");
+
+            var hexString = document.querySelector("#select-" + index).innerHTML;
+            var binString = makeBinString(hexString);
+
+            var finalText = "<span>Hex&nbsp;String:&nbsp;" + hexString + "</span><br><br>";
+
+            var name;
+            var startIdx;
+            var endIdx;
+            for (var i = 0; i < sections.length; i++) {
+                name = sections[i].substring(0, sections[i].indexOf("["));
+                startIdx = binString.length - sections[i].substring(sections[i].indexOf("[") + 1, sections[i].indexOf(":"));
+                endIdx = binString.length - sections[i].substring(sections[i].indexOf(":") + 1, sections[i].length - 1);
+
+                finalText += "<span>" + name + ":&nbsp;" + makeHexString(binString.substring(startIdx, endIdx)) + "</span><br><br>";
+            }
+
+            document.querySelector("#selected-info").innerHTML = finalText;
+            document.querySelector("#selected-info").style.top = document.querySelector("#select-" + index).offsetTop - ((window.innerWidth >= 650) ? 338 : 233) + "px";
+        }
+        window.addEventListener("resize", function() {
+            if (prevSelect != -1)
+                showStats(prevSelect);
+        });
+
+        //Helper functions for converting between hexadecimal and binary
+        function hexToBin(hexChar) {
+            var table = {
+                '0': '0000', '1': '0001', '2': '0010', '3': '0011',
+                '4': '0100', '5': '0101', '6': '0110', '7': '0111',
+                '8': '1000', '9': '1001', 'A': '1010', 'B': '1011',
+                'C': '1100', 'D': '1101', 'E': '1110', 'F': '1111',
+                'a': '1010', 'b': '1011', 'c': '1100', 'd': '1101',
+                'e': '1110', 'f': '1111'
+            };
+
+            return table[hexChar];
+        }
+        function binToHex(binString) {
+            var table = {
+                '0000': '0', '0001': '1', '0010': '2', '0011': '3',
+                '0100': '4', '0101': '5', '0110': '6', '0111': '7',
+                '1000': '8', '1001': '9', '1010': 'A', '1011': 'B',
+                '1100': 'C', '1101': 'D', '1110': 'E', '1111': 'F'
+            };
+
+            return table[binString];
+        }
+        function makeBinString(hexString) {
+            var binString = "";
+
+            for (i = 0; i < hexString.length; i++) {
+                binString += hexToBin(hexString.charAt(i));
+            }
+
+            return binString.substring(0, binString.length);
+        }
+        function makeHexString(binString) {
+            var hexString = "";
+
+            var start = binString.length % 4;
+            if (start != 0)
+                hexString += binToHex(binString.substring(0, start).padStart(4, "0"));
+
+            for (i = start; i < binString.length; i += 4) {
+                hexString += binToHex(binString.substring(i, i + 4));
+            }
+
+            return hexString;
+        }
+
+        function showError() {
+            document.querySelector("#output-data").innerHTML = "<span style='color: red'>ERROR: INVALID INPUT</span>";
+            document.querySelector("#selected-info").innerHTML = "";
+        }
+
+    </script>
+</body>
+
+</html>

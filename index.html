@@ -308,7 +308,7 @@
 
         //Displays statistics for the selected line
         function showStats(index) {
-            var sections = document.querySelector("#input-split").value.replace(/\s\s+/g, ' ').split(" ");
+            var sections = document.querySelector("#input-split").value.trim().replace(/\s\s+/g, ' ').split(" ");
 
             var hexString = document.querySelector("#select-" + index).innerHTML;
             var binString = makeBinString(hexString);
@@ -319,9 +319,19 @@
             var startIdx;
             var endIdx;
             for (var i = 0; i < sections.length; i++) {
+                if (!(sections[i].includes("[") && sections[i].includes(":") && sections[i].includes("]"))) {
+                    showError();
+                    return;
+                }
+
                 name = sections[i].substring(0, sections[i].indexOf("["));
-                startIdx = binString.length - sections[i].substring(sections[i].indexOf("[") + 1, sections[i].indexOf(":"));
+                startIdx = binString.length - sections[i].substring(sections[i].indexOf("[") + 1, sections[i].indexOf(":")) - 1;
                 endIdx = binString.length - sections[i].substring(sections[i].indexOf(":") + 1, sections[i].length - 1);
+
+                if (startIdx >= endIdx) {
+                    showError();
+                    return;
+                }
 
                 finalText += "<span>" + name + ":&nbsp;" + makeHexString(binString.substring(startIdx, endIdx)) + "</span><br><br>";
             }

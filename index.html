@@ -30,6 +30,81 @@
             text-align: center;
         }
 
+        #help-button {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.5em;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: black;
+            background-color: white;
+            display: block;
+            text-align: center;
+            border: none;
+            padding: 5px;
+            z-index: 200;
+        }
+
+        #help-button:hover {
+            background-color: #E5E5E5;
+        }
+
+        #help-button:active {
+            background-color: #CCCCCC;
+        }
+
+        #help-shader {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgb(0, 0, 0, 0.5);
+            z-index: 100;
+            display: none;
+        }
+
+        #help-window {
+            margin: 75px;
+            width: calc(100vw - 150px);
+            height: calc(100vh - 150px);
+            z-index: 200;
+        }
+
+        #help-window > img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            margin: 0 auto;
+            text-align: center;
+            border: 5px;
+            border-color: gainsboro;
+            border-style: solid;
+        }
+
+        #help-page-button {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.5em;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: black;
+            background-color: white;
+            display: block;
+            text-align: center;
+            border: none;
+            padding: 5px;
+            z-index: 200;
+        }
+
+        #help-page-button:hover {
+            background-color: #E5E5E5;
+        }
+
+        #help-page-button:active {
+            background-color: #CCCCCC;
+        }
+
         textarea {
             font-family: 'Courier Prime', monospace;
             float: left;
@@ -105,6 +180,11 @@
 
         #output-data {
             border-width: 0 5px 0px 0;
+            overflow: scroll;
+            overflow-x: hidden;
+        }
+
+        #output-info {
             overflow: scroll;
             overflow-x: hidden;
         }
@@ -185,7 +265,16 @@
         <h1>Packet Details</h1>
     </header>
 
-    <textarea type='text' id='input-data' placeholder='Hexadecimal String Input'></textarea>
+    <button id='help-button'>Show Help</button>
+    <div id='help-shader'>
+        <div id='help-window'>
+            <img src="img/help-1.png" id='help-image'>
+        </div>
+
+        <button id='help-page-button'>JSON Use</button>
+    </div>
+
+    <textarea type='text' id='input-data' spellcheck="false" placeholder='Hexadecimal String Input'></textarea>
 
     <input type='text' id='input-split' placeholder='Split Bounds'>
     <div id='input-upload'>
@@ -220,11 +309,10 @@
                 }
                 document.querySelector("#input-data").value = json["data"].join("\n");
 
-                var names = json["names"];
-                var split = json["split"];
+                var split = json["partitions"];
                 var splitString = "";
                 for (var i = 0; i < split.length; i++) {
-                    splitString += names[i] + "[" + split[i][0] + ":" + split[i][1] + "] ";
+                    splitString += split[i][0] + "[" + split[i][1] + ":" + split[i][2] + "] ";
                 }
                 document.querySelector("#input-split").value = splitString.substring(0, splitString.length - 1);
 
@@ -237,7 +325,7 @@
 
         //Displays the input data in the output data box whenever it changes
         function display() {
-            var fullText = document.querySelector("#input-data").value.split("\n");
+            var fullText = document.querySelector("#input-data").value.split("\n").filter(function(arg) {return arg != ""});
             numLines = fullText.length;
 
             var finalText = "";
@@ -315,7 +403,7 @@
         function showStats(index) {
             var sections = document.querySelector("#input-split").value.trim().replace(/\s\s+/g, ' ').split(" ");
 
-            var hexString = document.querySelector("#select-" + index).innerHTML.substring(8);
+            var hexString = document.querySelector("#select-" + index).innerHTML.substring(document.querySelector("#select-" + index).innerHTML.indexOf(";") + 1);
             var binString = makeBinString(hexString);
 
             var finalText = "<span>Hex&nbsp;String:&nbsp;" + hexString + "</span><br><br>";
@@ -396,11 +484,41 @@
             return hexString;
         }
 
+        //Displays an error with a given message
         function showError(message) {
             document.querySelector("#output-data").innerHTML = "<span style='color: red'>" + message + "</span>";
             document.querySelector("#selected-info").innerHTML = "";
         }
 
+        //Detects whenever the help button is clicked
+        function toggleHelpWindow() {
+            if (document.querySelector("#help-shader").style.display == "block") {
+                document.querySelector("#help-shader").style.display = "none";
+                document.querySelector("#help-button").innerHTML = "Show Help";
+            }
+            else {
+                document.querySelector("#help-shader").style.display = "block";
+                document.querySelector("#help-button").innerHTML = "Hide Help";
+                firstImage = false;
+                toggleHelpPage();
+            }
+        }
+        document.querySelector("#help-button").addEventListener("click", toggleHelpWindow);
+
+        var firstImage = true;
+        function toggleHelpPage() {
+            if (firstImage) {
+                document.querySelector("#help-image").src = "img/help-2.png";
+                document.querySelector("#help-page-button").innerHTML = "Normal Use";
+            }
+            else {
+                document.querySelector("#help-image").src = "img/help-1.png";
+                document.querySelector("#help-page-button").innerHTML = "JSON Use";
+            }
+
+            firstImage = !firstImage;
+        }
+        document.querySelector("#help-page-button").addEventListener("click", toggleHelpPage);
     </script>
 </body>
 
